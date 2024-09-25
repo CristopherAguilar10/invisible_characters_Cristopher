@@ -1,8 +1,8 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
 use cairo_lang_semantic::SemanticDiagnostic;
+use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
 use cairo_lang_syntax::node::ast::{
     BlockOrIf, Condition, ElseClause, Expr, ExprBinary, ExprIf, ExprLoop, ExprMatch, OptionPatternEnumInnerPattern,
     Pattern, Statement,
@@ -15,10 +15,10 @@ use log::debug;
 use crate::lints::bool_comparison::generate_fixed_text_for_comparison;
 use crate::lints::double_comparison;
 use crate::lints::single_match::is_expr_unit;
-use crate::plugin::{diagnostic_kind_from_message, CairoLintKind};
+use crate::plugin::{CairoLintKind, diagnostic_kind_from_message};
 
 mod import_fixes;
-pub use import_fixes::{apply_import_fixes, collect_unused_imports, ImportFix};
+pub use import_fixes::{ImportFix, apply_import_fixes, collect_unused_imports};
 
 /// Represents a fix for a diagnostic, containing the span of code to be replaced
 /// and the suggested replacement.
@@ -166,6 +166,9 @@ impl Fixer {
             CairoLintKind::DestructMatch => self.fix_destruct_match(db, plugin_diag.stable_ptr.lookup(db.upcast())),
             CairoLintKind::DoubleComparison => {
                 self.fix_double_comparison(db.upcast(), plugin_diag.stable_ptr.lookup(db.upcast()))
+            }
+            CairoLintKind::InvisibleCharacters => {
+                self.fix_whitespace_issues(db, plugin_diag.stable_ptr.lookup(db.upcast()))
             }
             CairoLintKind::EquatableIfLet => self.fix_equatable_if_let(db, plugin_diag.stable_ptr.lookup(db.upcast())),
             CairoLintKind::BreakUnit => self.fix_break_unit(db, plugin_diag.stable_ptr.lookup(db.upcast())),
@@ -377,5 +380,12 @@ impl Fixer {
             fixed_condition,
             expr.if_block(db).as_syntax_node().get_text(db),
         )
+    }
+    /// Removes all spaces from the given text.
+    pub fn fix_whitespace_issues(&self, db: &dyn SyntaxGroup, node: SyntaxNode) -> String {
+        let text = node.get_text(db);
+
+         text.replace(" ", "")
+    
     }
 }

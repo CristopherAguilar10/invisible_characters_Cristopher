@@ -1,15 +1,16 @@
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
-use cairo_lang_semantic::Expr;
 use cairo_lang_syntax::node::ast::{ElseClause, Expr as AstExpr, ExprBinary, ExprIf};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 use crate::lints::ifs::*;
 use crate::lints::{
-    bool_comparison, breaks, double_comparison, double_parens, duplicate_underscore_args, loops, single_match,
+    bool_comparison, breaks, double_comparison, double_parens, duplicate_underscore_args, invisible_characters, loops,
+    single_match,
 };
 
 pub fn cairo_lint_plugin_suite() -> PluginSuite {
@@ -33,6 +34,7 @@ pub enum CairoLintKind {
     DuplicateUnderscoreArgs,
     LoopMatchPopFront,
     Unknown,
+    InvisibleCharacters,
 }
 
 pub fn diagnostic_kind_from_message(message: &str) -> CairoLintKind {
@@ -49,6 +51,8 @@ pub fn diagnostic_kind_from_message(message: &str) -> CairoLintKind {
         collapsible_if_else::COLLAPSIBLE_IF_ELSE => CairoLintKind::CollapsibleIfElse,
         duplicate_underscore_args::DUPLICATE_UNDERSCORE_ARGS => CairoLintKind::DuplicateUnderscoreArgs,
         loops::LOOP_MATCH_POP_FRONT => CairoLintKind::LoopMatchPopFront,
+        invisible_characters::WHITESPACE_DETECTED => CairoLintKind::InvisibleCharacters,
+        invisible_characters::INVISIBLE_CHARACTER_DETECTED => CairoLintKind::InvisibleCharacters,
         _ => CairoLintKind::Unknown,
     }
 }
@@ -92,6 +96,7 @@ impl AnalyzerPlugin for CairoLint {
                         &AstExpr::from_syntax_node(db.upcast(), node),
                         &mut diags,
                     ),
+
                     SyntaxKind::StatementBreak => breaks::check_break(db.upcast(), node, &mut diags),
                     SyntaxKind::ExprIf => equatable_if_let::check_equatable_if_let(
                         db.upcast(),
@@ -107,6 +112,12 @@ impl AnalyzerPlugin for CairoLint {
                         collapsible_if_else::check_collapsible_if_else(
                             db.upcast(),
                             &ElseClause::from_syntax_node(db.upcast(), node),
+                            &mut diags,
+                        );
+                    }
+                    SyntaxKind::ExprInlineMacro => {invisible_characters::check_invisible_characters(
+                        &AstExpr::from_syntax_node(db.upcast(), node),
+                        db.upcast(),
                             &mut diags,
                         );
                     }

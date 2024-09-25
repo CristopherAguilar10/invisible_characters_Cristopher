@@ -4,5 +4,6 @@ pub mod double_comparison;
 pub mod double_parens;
 pub mod duplicate_underscore_args;
 pub mod ifs;
+pub mod invisible_characters;
 pub mod loops;
 pub mod single_match;
