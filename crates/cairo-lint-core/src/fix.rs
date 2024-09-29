@@ -172,9 +172,6 @@ impl Fixer {
             CairoLintKind::InvisibleCharacters => {
                 self.fix_whitespace_issues(db, plugin_diag.stable_ptr.lookup(db.upcast()))
             }
-            CairoLintKind::InvisibleCharacters => {
-                self.fix_whitespace_issues(db, plugin_diag.stable_ptr.lookup(db.upcast()))
-            }
             CairoLintKind::EquatableIfLet => self.fix_equatable_if_let(db, plugin_diag.stable_ptr.lookup(db.upcast())),
             CairoLintKind::BreakUnit => self.fix_break_unit(db, plugin_diag.stable_ptr.lookup(db.upcast())),
             CairoLintKind::BoolComparison => self.fix_bool_comparison(
